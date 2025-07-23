@@ -1,0 +1,8 @@
+
+FROM nginx:alpine
+
+# Copie les fichiers HTML dans le répertoire web de NGINX
+COPY frontend/ /usr/share/nginx/html/
+
+# Expose le port 80
+EXPOSE 80

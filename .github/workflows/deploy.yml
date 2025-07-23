@@ -1,0 +1,26 @@
+name: 🚀 Déploiement automatique de TicketApp
+
+on:
+  push:
+    branches:
+      - main  # ou 'master' selon ta branche par défaut
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Cloner le code
+      uses: actions/checkout@v3
+
+    - name: 🐳 Connexion SSH au serveur (ta machine Docker locale)
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          cd ticket-app
+          git pull
+          docker-compose down
+          docker-compose up -d --build

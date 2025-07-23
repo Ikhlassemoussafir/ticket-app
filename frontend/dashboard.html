@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>TicketApp - Gestion des tickets</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --sidebar-width: 250px;
+      --primary: #6c5ce7;
+      --secondary: #a29bfe;
+      --dark: #2d3436;
+      --light: #f5f6fa;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow-x: hidden;
+      background-color: var(--light);
+    }
+    
+    /* Sidebar styling */
+    .sidebar {
+      width: var(--sidebar-width);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background: linear-gradient(180deg, var(--dark) 0%, #1e272e 100%);
+      color: white;
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+    
+    .sidebar-brand {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      text-align: center;
+    }
+    
+    .sidebar-nav {
+      padding: 20px 0;
+    }
+    
+    .nav-item {
+      margin: 5px 15px;
+      border-radius: 8px;
+      transition: all 0.3s;
+    }
+    
+    .nav-item:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    
+    .nav-item.active {
+      background: var(--primary);
+    }
+    
+    .nav-link {
+      color: white !important;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+    }
+    
+    .nav-link i {
+      margin-right: 10px;
+      font-size: 1.2rem;
+      width: 24px;
+      text-align: center;
+    }
+    
+    /* Main content area */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      padding: 20px;
+      min-height: 100vh;
+      transition: all 0.3s;
+    }
+    
+    /* Header */
+    .topbar {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .user-menu {
+      display: flex;
+      align-items: center;
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 15px;
+      font-weight: bold;
+    }
+    
+    /* Content cards */
+    .content-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    /* Stat cards */
+    .stat-card {
+      border-radius: 10px;
+      padding: 15px;
+      color: white;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .stat-card i {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    
+    .stat-card .stat-value {
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+    
+    .stat-card .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+    
+    /* Ticket card */
+    .ticket-card {
+      border-left: 4px solid;
+      margin-bottom: 15px;
+      transition: all 0.3s;
+    }
+    
+    .ticket-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .ticket-card .badge {
+      font-size: 0.8rem;
+      padding: 5px 10px;
+    }
+    
+    /* Quick actions */
+    .quick-action {
+      text-align: center;
+      padding: 15px;
+      border-radius: 10px;
+      background: white;
+      transition: all 0.3s;
+      margin-bottom: 15px;
+      cursor: pointer;
+    }
+    
+    .quick-action:hover {
+      background: var(--primary);
+      color: white;
+      transform: translateY(-3px);
+    }
+    
+    .quick-action i {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.active {
+        transform: translateX(0);
+      }
+      .main-content {
+        margin-left: 0;
+      }
+      .sidebar-toggle {
+        display: block !important;
+      }
+    }
+    
+    /* Toggle button for mobile */
+    .sidebar-toggle {
+      display: none;
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 1100;
+      background: var(--primary);
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 1.2rem;
+    }
+    
+    /* Animation for active nav item */
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(108, 92, 231, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0); }
+    }
+    
+    .nav-item.active {
+      animation: pulse 1.5s infinite;
+    }
+    
+    /* Status colors */
+    .status-open { border-color: #ff4757; }
+    .status-in-progress { border-color: #ffa502; }
+    .status-resolved { border-color: #2ed573; }
+    .status-closed { border-color: #dfe4ea; }
+    
+    .bg-open { background: #ff4757; }
+    .bg-in-progress { background: #ffa502; }
+    .bg-resolved { background: #2ed573; }
+    .bg-closed { background: #dfe4ea; color: #2d3436; }
+    
+    /* Hidden content */
+    .content-section {
+      display: none;
+    }
+    
+    .content-section.active {
+      display: block;
+    }
+    
+    /* Form styles */
+    .form-card {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    /* Table styles */
+    .table-responsive {
+      overflow-x: auto;
+    }
+    
+    .table {
+      width: 100%;
+    }
+    
+    .table th {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    /* Badge status */
+    .badge-status {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    
+    .badge-open { background-color: #ff4757; color: white; }
+    .badge-in-progress { background-color: #ffa502; color: white; }
+    .badge-resolved { background-color: #2ed573; color: white; }
+    .badge-closed { background-color: #dfe4ea; color: #2d3436; }
+    
+    /* Priority badges */
+    .priority-badge {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Creation card */
+    .creation-card {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .form-header {
+      background-color: var(--primary);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile toggle button -->
+  <button class="sidebar-toggle" id="sidebarToggle">
+    <i class="fas fa-bars"></i>
+  </button>
+  
+  <!-- Sidebar Navigation -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <h3><i class="fas fa-ticket-alt"></i> TicketApp</h3>
+      <p class="text-muted mb-0" id="userRoleDisplay">Tableau de bord</p>
+    </div>
+    
+    <div class="sidebar-nav">
+      <div class="nav-item active" id="navDashboard">
+        <a href="#dashboard" class="nav-link">
+          <i class="fas fa-home"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+      
+      <div class="nav-item" id="navTickets">
+        <a href="#tickets" class="nav-link">
+          <i class="fas fa-ticket-alt"></i>
+          <span>Tous les tickets</span>
+        </a>
+      </div>
+      
+      <div class="nav-item" id="navNewTicket">
+        <a href="#new-ticket" class="nav-link">
+          <i class="fas fa-plus-circle"></i>
+          <span>Créer un ticket</span>
+        </a>
+      </div>
+      
+      <div class="nav-item admin-only" id="navUsers">
+        <a href="#users" class="nav-link">
+          <i class="fas fa-users"></i>
+          <span>Utilisateurs</span>
+        </a>
+      </div>
+      
+      <div class="nav-item agent-admin-only" id="navStats">
+        <a href="#stats" class="nav-link">
+          <i class="fas fa-chart-bar"></i>
+          <span>Statistiques</span>
+        </a>
+      </div>
+      
+      <div class="nav-item mt-4">
+        <a href="#settings" class="nav-link">
+          <i class="fas fa-cog"></i>
+          <span>Paramètres</span>
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Main Content Area -->
+  <div class="main-content" id="mainContent">
+    <div class="topbar">
+      <div>
+        <h4 class="mb-0" id="welcomeMessage">Bonjour Utilisateur</h4>
+        <small class="text-muted">Rôle: <span id="currentRoleDisplay">Chargement...</span></small>
+      </div>
+      <div class="user-menu">
+        <button class="btn btn-sm btn-outline-danger" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i> Se déconnecter
+        </button>
+        <div class="user-avatar" id="userAvatar">UU</div>
+      </div>
+    </div>
+    
+    <!-- Dashboard Content -->
+    <div class="content-section active" id="dashboardContent">
+      <!-- 1. Statistiques globales -->
+      <h4 class="mb-3">📊 Statistiques globales</h4>
+      <div class="row">
+        <div class="col-md-3">
+          <div class="stat-card bg-open">
+            <i class="fas fa-exclamation-circle"></i>
+            <div class="stat-value" id="openTicketsCount">0</div>
+            <div class="stat-label">Tickets ouverts</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card bg-in-progress">
+            <i class="fas fa-spinner"></i>
+            <div class="stat-value" id="inProgressTicketsCount">0</div>
+            <div class="stat-label">En cours</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card bg-resolved">
+            <i class="fas fa-check-circle"></i>
+            <div class="stat-value" id="resolvedTicketsCount">0</div>
+            <div class="stat-label">Résolus</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card bg-closed">
+            <i class="fas fa-times-circle"></i>
+            <div class="stat-value" id="closedTicketsCount">0</div>
+            <div class="stat-label">Fermés</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 2. Mes tickets récents -->
+      <h4 class="mb-3 mt-4">🎫 Mes tickets récents</h4>
+      <div class="row" id="recentTicketsContainer">
+        <!-- Tickets will be loaded here dynamically -->
+      </div>
+      
+      <!-- 3. Boutons d'actions rapides -->
+      <h4 class="mb-3 mt-4">➕ Actions rapides</h4>
+      <div class="row">
+        <div class="col-md-3">
+          <div class="quick-action" id="quickNewTicket">
+            <i class="fas fa-plus-circle"></i>
+            <h5>Créer un ticket</h5>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="quick-action" id="quickAllTickets">
+            <i class="fas fa-ticket-alt"></i>
+            <h5>Tous les tickets</h5>
+          </div>
+        </div>
+        <div class="col-md-3 admin-only">
+          <div class="quick-action" id="quickUsers">
+            <i class="fas fa-users"></i>
+            <h5>Utilisateurs</h5>
+          </div>
+        </div>
+        <div class="col-md-3 agent-admin-only">
+          <div class="quick-action" id="quickStats">
+            <i class="fas fa-chart-bar"></i>
+            <h5>Statistiques</h5>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 4. Graphiques -->
+      <div class="agent-admin-only">
+        <h4 class="mb-3 mt-4">📈 Statistiques avancées</h4>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="content-card">
+              <h5>Tickets créés par mois</h5>
+              <canvas id="ticketsByMonthChart" height="250"></canvas>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="content-card">
+              <h5>Répartition des statuts</h5>
+              <canvas id="statusDistributionChart" height="250"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-md-12">
+            <div class="content-card">
+              <h5>Tickets résolus par agent</h5>
+              <canvas id="resolvedByAgentChart" height="250"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- All Tickets Content -->
+    <div class="content-section" id="ticketsContent">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>🎫 Tous les tickets</h4>
+        <button class="btn btn-primary" id="addTicketBtn">
+          <i class="fas fa-plus"></i> Nouveau ticket
+        </button>
+      </div>
+      
+      <div class="content-card">
+        <div class="d-flex justify-content-between mb-3">
+          <div class="d-flex">
+            <input type="text" class="form-control me-2" placeholder="Rechercher..." id="ticketSearchInput" style="width: 250px;">
+            <select class="form-select me-2" id="ticketStatusFilter" style="width: 150px;">
+              <option value="">Tous les statuts</option>
+              <option value="open">Ouvert</option>
+              <option value="in-progress">En cours</option>
+              <option value="resolved">Résolu</option>
+              <option value="closed">Fermé</option>
+            </select>
+            <select class="form-select" id="ticketPriorityFilter" style="width: 150px;">
+              <option value="">Toutes priorités</option>
+              <option value="high">Haute</option>
+              <option value="medium">Moyenne</option>
+              <option value="low">Basse</option>
+            </select>
+          </div>
+          <button class="btn btn-outline-secondary" id="refreshTicketsBtn">
+            <i class="fas fa-sync-alt"></i> Actualiser
+          </button>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Titre</th>
+                <th>Statut</th>
+                <th>Créé le</th>
+                <th>Priorité</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ticketsTableBody">
+              <!-- Tickets will be loaded here dynamically -->
+            </tbody>
+          </table>
+        </div>
+        
+        <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center" id="ticketsPagination">
+            <!-- Pagination will be loaded here dynamically -->
+          </ul>
+        </nav>
+      </div>
+    </div>
+    
+    <!-- New Ticket Form -->
+    <div class="content-section" id="newTicketContent">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>➕ Créer un nouveau ticket</h4>
+        <button class="btn btn-outline-secondary" id="backToTicketsBtn">
+          <i class="fas fa-arrow-left"></i> Retour
+        </button>
+      </div>
+      
+      <div class="content-card form-card">
+        <form id="ticketForm">
+          <div class="mb-3">
+            <label for="ticketTitle" class="form-label">Titre du ticket</label>
+            <input type="text" class="form-control" id="ticketTitle" required>
+          </div>
+          
+          <div class="mb-3">
+            <label for="ticketDescription" class="form-label">Description</label>
+            <textarea class="form-control" id="ticketDescription" rows="5" required></textarea>
+            <div class="form-text">Caractères restants: <span id="charCount">500</span></div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="ticketPriority" class="form-label">Priorité</label>
+              <select class="form-select" id="ticketPriority" required>
+                <option value="">Sélectionner...</option>
+                <option value="low">Basse</option>
+                <option value="medium">Moyenne</option>
+                <option value="high">Haute</option>
+              </select>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+              <label for="ticketCategory" class="form-label">Catégorie</label>
+              <select class="form-select" id="ticketCategory" required>
+                <option value="">Sélectionner...</option>
+                <option value="hardware">Matériel</option>
+                <option value="software">Logiciel</option>
+                <option value="network">Réseau</option>
+                <option value="other">Autre</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="ticketAttachments" class="form-label">Pièces jointes</label>
+            <input type="file" class="form-control" id="ticketAttachments" multiple>
+          </div>
+          
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary" id="submitTicketBtn">
+              <i class="fas fa-paper-plane"></i> Envoyer le ticket
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Users Management -->
+    <div class="content-section" id="usersContent">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>👥 Gestion des utilisateurs</h4>
+        <button class="btn btn-primary" id="addUserBtn">
+          <i class="fas fa-plus"></i> Nouvel utilisateur
+        </button>
+      </div>
+      
+      <div class="content-card">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Rôle</th>
+                <th>Dernière connexion</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <!-- Users will be loaded here dynamically -->
+            </tbody>
+          </table>
+        </div>
+        
+        <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center" id="usersPagination">
+            <!-- Pagination will be loaded here dynamically -->
+          </ul>
+        </nav>
+      </div>
+    </div>
+    
+    <!-- Add/Edit User Modal -->
+    <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="userModalTitle">Ajouter un utilisateur</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="userForm">
+              <input type="hidden" id="userId">
+              <div class="mb-3">
+                <label for="userName" class="form-label">Nom complet</label>
+                <input type="text" class="form-control" id="userName" required>
+              </div>
+              <div class="mb-3">
+                <label for="userEmail" class="form-label">Email</label>
+                <input type="email" class="form-control" id="userEmail" required>
+              </div>
+              <div class="mb-3">
+                <label for="userPassword" class="form-label">Mot de passe</label>
+                <input type="password" class="form-control" id="userPassword">
+                <div class="form-text">Laisser vide pour ne pas modifier</div>
+              </div>
+              <div class="mb-3">
+                <label for="userRole" class="form-label">Rôle</label>
+                <select class="form-select" id="userRole" required>
+                  <option value="admin">Administrateur</option>
+                  <option value="agent">Agent</option>
+                  <option value="employee">Employé</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="userStatus" class="form-label">Statut</label>
+                <select class="form-select" id="userStatus" required>
+                  <option value="active">Actif</option>
+                  <option value="inactive">Inactif</option>
+                </select>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-primary" id="saveUserBtn">Enregistrer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Statistics Content -->
+    <div class="content-section" id="statsContent">
+      <h4 class="mb-3">📈 Statistiques avancées</h4>
+      
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <div class="stat-card bg-open">
+            <i class="fas fa-exclamation-circle"></i>
+            <div class="stat-value" id="statsOpenTickets">0</div>
+            <div class="stat-label">Tickets ouverts</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card bg-in-progress">
+            <i class="fas fa-spinner"></i>
+            <div class="stat-value" id="statsInProgressTickets">0</div>
+            <div class="stat-label">En cours</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card bg-resolved">
+            <i class="fas fa-check-circle"></i>
+            <div class="stat-value" id="statsResolvedTickets">0</div>
+            <div class="stat-label">Résolus</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stat-card bg-closed">
+            <i class="fas fa-times-circle"></i>
+            <div class="stat-value" id="statsClosedTickets">0</div>
+            <div class="stat-label">Fermés</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-6">
+          <div class="content-card">
+            <h5>Tickets créés par mois</h5>
+            <canvas id="statsTicketsByMonthChart" height="250"></canvas>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="content-card">
+            <h5>Répartition des statuts</h5>
+            <canvas id="statsStatusDistributionChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-3">
+        <div class="col-md-12">
+          <div class="content-card">
+            <h5>Tickets résolus par agent</h5>
+            <canvas id="statsResolvedByAgentChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-3">
+        <div class="col-md-6">
+          <div class="content-card">
+            <h5>Temps moyen de résolution (jours)</h5>
+            <canvas id="resolutionTimeChart" height="250"></canvas>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="content-card">
+            <h5>Tickets par catégorie</h5>
+            <canvas id="ticketsByCategoryChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Configuration globale
+    const config = {
+      apiUrl: 'http://localhost:3000/api',
+      itemsPerPage: 10,
+      currentUser: null
+    };
+
+    // DOM Elements
+    const elements = {
+      sidebarToggle: document.getElementById('sidebarToggle'),
+      sidebar: document.getElementById('sidebar'),
+      mainContent: document.getElementById('mainContent'),
+      welcomeMessage: document.getElementById('welcomeMessage'),
+      currentRoleDisplay: document.getElementById('currentRoleDisplay'),
+      userAvatar: document.getElementById('userAvatar'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      contentSections: {
+        dashboard: document.getElementById('dashboardContent'),
+        tickets: document.getElementById('ticketsContent'),
+        newTicket: document.getElementById('newTicketContent'),
+        users: document.getElementById('usersContent'),
+        stats: document.getElementById('statsContent')
+      },
+      navItems: {
+        dashboard: document.getElementById('navDashboard'),
+        tickets: document.getElementById('navTickets'),
+        newTicket: document.getElementById('navNewTicket'),
+        users: document.getElementById('navUsers'),
+        stats: document.getElementById('navStats')
+      },
+      quickActions: {
+        newTicket: document.getElementById('quickNewTicket'),
+        allTickets: document.getElementById('quickAllTickets'),
+        users: document.getElementById('quickUsers'),
+        stats: document.getElementById('quickStats')
+      },
+      // Dashboard elements
+      openTicketsCount: document.getElementById('openTicketsCount'),
+      inProgressTicketsCount: document.getElementById('inProgressTicketsCount'),
+      resolvedTicketsCount: document.getElementById('resolvedTicketsCount'),
+      closedTicketsCount: document.getElementById('closedTicketsCount'),
+      recentTicketsContainer: document.getElementById('recentTicketsContainer'),
+      // Tickets elements
+      addTicketBtn: document.getElementById('addTicketBtn'),
+      backToTicketsBtn: document.getElementById('backToTicketsBtn'),
+      ticketSearchInput: document.getElementById('ticketSearchInput'),
+      ticketStatusFilter: document.getElementById('ticketStatusFilter'),
+      ticketPriorityFilter: document.getElementById('ticketPriorityFilter'),
+      refreshTicketsBtn: document.getElementById('refreshTicketsBtn'),
+      ticketsTableBody: document.getElementById('ticketsTableBody'),
+      ticketsPagination: document.getElementById('ticketsPagination'),
+      // New ticket elements
+      ticketForm: document.getElementById('ticketForm'),
+      ticketTitle: document.getElementById('ticketTitle'),
+      ticketDescription: document.getElementById('ticketDescription'),
+      ticketPriority: document.getElementById('ticketPriority'),
+      ticketCategory: document.getElementById('ticketCategory'),
+      ticketAttachments: document.getElementById('ticketAttachments'),
+      charCount: document.getElementById('charCount'),
+      submitTicketBtn: document.getElementById('submitTicketBtn'),
+      // Users elements
+      addUserBtn: document.getElementById('addUserBtn'),
+      usersTableBody: document.getElementById('usersTableBody'),
+      usersPagination: document.getElementById('usersPagination'),
+      // User modal elements
+      userModal: new bootstrap.Modal(document.getElementById('userModal')),
+      userModalTitle: document.getElementById('userModalTitle'),
+      userForm: document.getElementById('userForm'),
+      userId: document.getElementById('userId'),
+      userName: document.getElementById('userName'),
+      userEmail: document.getElementById('userEmail'),
+      userPassword: document.getElementById('userPassword'),
+      userRole: document.getElementById('userRole'),
+      userStatus: document.getElementById('userStatus'),
+      saveUserBtn: document.getElementById('saveUserBtn'),
+      // Stats elements
+      statsOpenTickets: document.getElementById('statsOpenTickets'),
+      statsInProgressTickets: document.getElementById('statsInProgressTickets'),
+      statsResolvedTickets: document.getElementById('statsResolvedTickets'),
+      statsClosedTickets: document.getElementById('statsClosedTickets')
+    };
+
+    // State management
+    const state = {
+      currentPage: 'dashboard',
+      tickets: [],
+      users: [],
+      currentTicketsPage: 1,
+      currentUsersPage: 1,
+      ticketFilters: {
+        search: '',
+        status: '',
+        priority: ''
+      }
+    };
+
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check authentication
+      checkAuth();
+      
+      // Initialize event listeners
+      initEventListeners();
+      
+      // Load initial data
+      loadInitialData();
+      
+      // Initialize charts
+      initCharts();
+    });
+
+    // Check authentication
+    function checkAuth() {
+      const userData = localStorage.getItem('ticketAppAuth');
+      if (!userData) {
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      config.currentUser = JSON.parse(userData);
+      updateUserUI();
+    }
+
+    // Update UI based on user role
+    function updateUserUI() {
+      const { name, role } = config.currentUser;
+      
+      // Update welcome message
+      elements.welcomeMessage.textContent = `Bonjour ${name}`;
+      elements.currentRoleDisplay.textContent = getRoleDisplay(role);
+      elements.userAvatar.textContent = name.split(' ').map(n => n[0]).join('').toUpperCase();
+      
+      // Show/hide elements based on role
+      document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = role === 'admin' ? '' : 'none';
+      });
+      
+      document.querySelectorAll('.agent-admin-only').forEach(el => {
+        el.style.display = role === 'admin' || role === 'agent' ? '' : 'none';
+      });
+    }
+
+    // Get role display text
+    function getRoleDisplay(role) {
+      const roles = {
+        admin: 'Administrateur',
+        agent: 'Agent',
+        employee: 'Employé'
+      };
+      return roles[role] || role;
+    }
+
+    // Initialize event listeners
+    function initEventListeners() {
+      // Mobile sidebar toggle
+      elements.sidebarToggle.addEventListener('click', function() {
+        elements.sidebar.classList.toggle('active');
+      });
+      
+      // Navigation items
+      Object.keys(elements.navItems).forEach(key => {
+        elements.navItems[key].addEventListener('click', function(e) {
+          e.preventDefault();
+          navigateTo(key);
+        });
+      });
+      
+      // Quick actions
+      elements.quickActions.newTicket.addEventListener('click', () => navigateTo('newTicket'));
+      elements.quickActions.allTickets.addEventListener('click', () => navigateTo('tickets'));
+      elements.quickActions.users.addEventListener('click', () => navigateTo('users'));
+      elements.quickActions.stats.addEventListener('click', () => navigateTo('stats'));
+      
+      // Logout button
+      elements.logoutBtn.addEventListener('click', function() {
+        if (confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) {
+          localStorage.removeItem('ticketAppAuth');
+          window.location.href = 'login.html';
+        }
+      });
+      
+      // Tickets page
+      elements.addTicketBtn.addEventListener('click', () => navigateTo('newTicket'));
+      elements.backToTicketsBtn.addEventListener('click', () => navigateTo('tickets'));
+      elements.refreshTicketsBtn.addEventListener('click', () => loadTickets());
+      elements.ticketSearchInput.addEventListener('input', function() {
+        state.ticketFilters.search = this.value;
+        loadTickets();
+      });
+      elements.ticketStatusFilter.addEventListener('change', function() {
+        state.ticketFilters.status = this.value;
+        loadTickets();
+      });
+      elements.ticketPriorityFilter.addEventListener('change', function() {
+        state.ticketFilters.priority = this.value;
+        loadTickets();
+      });
+      
+      // New ticket form
+      elements.ticketDescription.addEventListener('input', function() {
+        const remaining = 500 - this.value.length;
+        elements.charCount.textContent = remaining;
+        elements.charCount.className = remaining < 50 ? 'text-danger' : '';
+      });
+      elements.ticketForm.addEventListener('submit', handleTicketSubmit);
+      
+      // Users page
+      elements.addUserBtn.addEventListener('click', () => openUserModal());
+      elements.saveUserBtn.addEventListener('click', handleUserSave);
+    }
+
+    // Navigation function
+    function navigateTo(section) {
+      // Update active nav item
+      Object.values(elements.navItems).forEach(item => {
+        item.classList.remove('active');
+      });
+      elements.navItems[section].classList.add('active');
+      
+      // Hide all content sections
+      Object.values(elements.contentSections).forEach(section => {
+        section.classList.remove('active');
+      });
+      
+      // Show the selected content section
+      elements.contentSections[section].classList.add('active');
+      state.currentPage = section;
+      
+      // Load section-specific data
+      switch(section) {
+        case 'tickets':
+          loadTickets();
+          break;
+        case 'users':
+          loadUsers();
+          break;
+        case 'stats':
+          loadStats();
+          break;
+        case 'dashboard':
+          loadDashboardData();
+          break;
+      }
+      
+      // Close sidebar on mobile
+      if (window.innerWidth <= 768) {
+        elements.sidebar.classList.remove('active');
+      }
+    }
+
+    // Load initial data
+    function loadInitialData() {
+      loadDashboardData();
+    }
+
+    // Load dashboard data
+    function loadDashboardData() {
+      // Simulate API calls
+      setTimeout(() => {
+        // Update ticket counts
+        elements.openTicketsCount.textContent = '24';
+        elements.inProgressTicketsCount.textContent = '15';
+        elements.resolvedTicketsCount.textContent = '42';
+        elements.closedTicketsCount.textContent = '18';
+        
+        // Load recent tickets
+        const recentTickets = [
+          {
+            id: 'TICKET-001',
+            title: 'Problème de connexion VPN',
+            status: 'open',
+            createdAt: '15/07/2023',
+            priority: 'high'
+          },
+          {
+            id: 'TICKET-002',
+            title: 'Demande de nouveau matériel',
+            status: 'in-progress',
+            createdAt: '12/07/2023',
+            priority: 'medium'
+          },
+          {
+            id: 'TICKET-003',
+            title: 'Problème d\'imprimante',
+            status: 'resolved',
+            createdAt: '10/07/2023',
+            priority: 'low'
+          }
+        ];
+        
+        renderRecentTickets(recentTickets);
+      }, 500);
+    }
+
+    // Render recent tickets
+    function renderRecentTickets(tickets) {
+      elements.recentTicketsContainer.innerHTML = tickets.map(ticket => `
+        <div class="col-md-4">
+          <div class="ticket-card status-${ticket.status} content-card">
+            <h5>${ticket.title}</h5>
+            <p class="text-muted small">Créé le ${ticket.createdAt}</p>
+            <span class="badge bg-${getPriorityClass(ticket.priority)}">${getPriorityText(ticket.priority)}</span>
+            <span class="badge-status badge-${ticket.status.replace('-', '')}">${getStatusText(ticket.status)}</span>
+            <div class="mt-3">
+              <button class="btn btn-sm btn-primary" data-action="view" data-id="${ticket.id}">
+                <i class="fas fa-eye"></i> Voir
+              </button>
+              ${ticket.status !== 'resolved' && ticket.status !== 'closed' ? `
+              <button class="btn btn-sm btn-warning" data-action="edit" data-id="${ticket.id}">
+                <i class="fas fa-edit"></i> Modifier
+              </button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+      
+      // Add event listeners to buttons
+      document.querySelectorAll('[data-action="view"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          alert(`Voir ticket ${btn.dataset.id}`);
+        });
+      });
+      
+      document.querySelectorAll('[data-action="edit"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          alert(`Modifier ticket ${btn.dataset.id}`);
+        });
+      });
+    }
+
+    // Load tickets
+    function loadTickets(page = 1) {
+      state.currentTicketsPage = page;
+      
+      // Simulate API call with filtering
+      setTimeout(() => {
+        // In a real app, this would be a fetch call to your API
+        const mockTickets = generateMockTickets(35);
+        
+        // Apply filters
+        let filteredTickets = [...mockTickets];
+        
+        if (state.ticketFilters.search) {
+          const searchTerm = state.ticketFilters.search.toLowerCase();
+          filteredTickets = filteredTickets.filter(t => 
+            t.title.toLowerCase().includes(searchTerm) || 
+            t.id.toLowerCase().includes(searchTerm)
+          );
+        }
+        
+        if (state.ticketFilters.status) {
+          filteredTickets = filteredTickets.filter(t => t.status === state.ticketFilters.status);
+        }
+        
+        if (state.ticketFilters.priority) {
+          filteredTickets = filteredTickets.filter(t => t.priority === state.ticketFilters.priority);
+        }
+        
+        // Paginate results
+        const startIndex = (page - 1) * config.itemsPerPage;
+        const paginatedTickets = filteredTickets.slice(startIndex, startIndex + config.itemsPerPage);
+        
+        renderTickets(paginatedTickets);
+        renderTicketsPagination(filteredTickets.length, page);
+      }, 300);
+    }
+
+    // Render tickets table
+    function renderTickets(tickets) {
+      if (tickets.length === 0) {
+        elements.ticketsTableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              Aucun ticket trouvé
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      elements.ticketsTableBody.innerHTML = tickets.map(ticket => `
+        <tr>
+          <td>${ticket.id}</td>
+          <td>${ticket.title}</td>
+          <td><span class="badge-status badge-${ticket.status.replace('-', '')}">${getStatusText(ticket.status)}</span></td>
+          <td>${ticket.createdAt}</td>
+          <td><span class="badge bg-${getPriorityClass(ticket.priority)}">${getPriorityText(ticket.priority)}</span></td>
+          <td>
+            <button class="btn btn-sm btn-primary" data-action="view" data-id="${ticket.id}">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-warning" data-action="edit" data-id="${ticket.id}">
+              <i class="fas fa-edit"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+      
+      // Add event listeners to buttons
+      document.querySelectorAll('[data-action="view"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          alert(`Voir ticket ${btn.dataset.id}`);
+        });
+      });
+      
+      document.querySelectorAll('[data-action="edit"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          alert(`Modifier ticket ${btn.dataset.id}`);
+        });
+      });
+    }
+
+    // Render tickets pagination
+    function renderTicketsPagination(totalItems, currentPage) {
+      const totalPages = Math.ceil(totalItems / config.itemsPerPage);
+      
+      if (totalPages <= 1) {
+        elements.ticketsPagination.innerHTML = '';
+        return;
+      }
+      
+      let paginationHTML = `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+          <a class="page-link" href="#" data-page="${currentPage - 1}">Précédent</a>
+        </li>
+      `;
+      
+      for (let i = 1; i <= totalPages; i++) {
+        paginationHTML += `
+          <li class="page-item ${i === currentPage ? 'active' : ''}">
+            <a class="page-link" href="#" data-page="${i}">${i}</a>
+          </li>
+        `;
+      }
+      
+      paginationHTML += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+          <a class="page-link" href="#" data-page="${currentPage + 1}">Suivant</a>
+        </li>
+      `;
+      
+      elements.ticketsPagination.innerHTML = paginationHTML;
+      
+      // Add event listeners to pagination buttons
+      document.querySelectorAll('#ticketsPagination .page-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (!this.parentElement.classList.contains('disabled')) {
+            loadTickets(parseInt(this.dataset.page));
+          }
+        });
+      });
+    }
+
+    // Load users
+    function loadUsers(page = 1) {
+      state.currentUsersPage = page;
+      
+      // Simulate API call
+      setTimeout(() => {
+        const mockUsers = generateMockUsers(28);
+        
+        // Paginate results
+        const startIndex = (page - 1) * config.itemsPerPage;
+        const paginatedUsers = mockUsers.slice(startIndex, startIndex + config.itemsPerPage);
+        
+        renderUsers(paginatedUsers);
+        renderUsersPagination(mockUsers.length, page);
+      }, 300);
+    }
+
+    // Render users table
+    function renderUsers(users) {
+      if (users.length === 0) {
+        elements.usersTableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              Aucun utilisateur trouvé
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      elements.usersTableBody.innerHTML = users.map(user => `
+        <tr>
+          <td>${user.name}</td>
+          <td>${user.email}</td>
+          <td><span class="badge bg-${getRoleBadgeClass(user.role)}">${getRoleDisplay(user.role)}</span></td>
+          <td>${user.lastLogin || 'Jamais'}</td>
+          <td><span class="badge bg-${user.status === 'active' ? 'success' : 'secondary'}">${user.status === 'active' ? 'Actif' : 'Inactif'}</span></td>
+          <td>
+            <button class="btn btn-sm btn-primary" data-action="view" data-id="${user.id}">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-warning" data-action="edit" data-id="${user.id}">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" data-action="delete" data-id="${user.id}">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+      
+      // Add event listeners to buttons
+      document.querySelectorAll('[data-action="view"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          alert(`Voir utilisateur ${btn.dataset.id}`);
+        });
+      });
+      
+      document.querySelectorAll('[data-action="edit"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const userId = btn.dataset.id;
+          openUserModal(userId);
+        });
+      });
+      
+      document.querySelectorAll('[data-action="delete"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
+            alert(`Utilisateur ${btn.dataset.id} supprimé (simulation)`);
+            loadUsers(state.currentUsersPage);
+          }
+        });
+      });
+    }
+
+    // Render users pagination
+    function renderUsersPagination(totalItems, currentPage) {
+      const totalPages = Math.ceil(totalItems / config.itemsPerPage);
+      
+      if (totalPages <= 1) {
+        elements.usersPagination.innerHTML = '';
+        return;
+      }
+      
+      let paginationHTML = `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+          <a class="page-link" href="#" data-page="${currentPage - 1}">Précédent</a>
+        </li>
+      `;
+      
+      for (let i = 1; i <= totalPages; i++) {
+        paginationHTML += `
+          <li class="page-item ${i === currentPage ? 'active' : ''}">
+            <a class="page-link" href="#" data-page="${i}">${i}</a>
+          </li>
+        `;
+      }
+      
+      paginationHTML += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+          <a class="page-link" href="#" data-page="${currentPage + 1}">Suivant</a>
+        </li>
+      `;
+      
+      elements.usersPagination.innerHTML = paginationHTML;
+      
+      // Add event listeners to pagination buttons
+      document.querySelectorAll('#usersPagination .page-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (!this.parentElement.classList.contains('disabled')) {
+            loadUsers(parseInt(this.dataset.page));
+          }
+        });
+      });
+    }
+
+    // Open user modal (for add/edit)
+    function openUserModal(userId = null) {
+      if (userId) {
+        // Edit mode - in a real app, fetch user data from API
+        elements.userModalTitle.textContent = 'Modifier utilisateur';
+        elements.userId.value = userId;
+        
+        // Simulate fetching user data
+        setTimeout(() => {
+          elements.userName.value = 'John Doe';
+          elements.userEmail.value = 'john.doe@example.com';
+          elements.userRole.value = 'employee';
+          elements.userStatus.value = 'active';
+          elements.userModal.show();
+        }, 200);
+      } else {
+        // Add mode
+        elements.userModalTitle.textContent = 'Ajouter un utilisateur';
+        elements.userId.value = '';
+        elements.userForm.reset();
+        elements.userModal.show();
+      }
+    }
+
+    // Handle user save
+    function handleUserSave() {
+      // Validate form
+      if (!elements.userName.value || !elements.userEmail.value || !elements.userRole.value) {
+        alert('Veuillez remplir tous les champs obligatoires');
+        return;
+      }
+      
+      // Simulate API call
+      elements.saveUserBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Enregistrement...';
+      elements.saveUserBtn.disabled = true;
+      
+      setTimeout(() => {
+        alert(elements.userId.value ? 'Utilisateur mis à jour avec succès' : 'Utilisateur créé avec succès');
+        elements.userModal.hide();
+        elements.saveUserBtn.innerHTML = 'Enregistrer';
+        elements.saveUserBtn.disabled = false;
+        loadUsers(state.currentUsersPage);
+      }, 1000);
+    }
+
+    // Load stats
+    function loadStats() {
+      // Update counts
+      elements.statsOpenTickets.textContent = '24';
+      elements.statsInProgressTickets.textContent = '15';
+      elements.statsResolvedTickets.textContent = '42';
+      elements.statsClosedTickets.textContent = '18';
+      
+      // Initialize stats charts
+      initStatsCharts();
+    }
+
+    // Handle ticket submission
+    function handleTicketSubmit(e) {
+      e.preventDefault();
+      
+      // Validate form
+      if (!elements.ticketTitle.value || !elements.ticketDescription.value || 
+          !elements.ticketPriority.value || !elements.ticketCategory.value) {
+        alert('Veuillez remplir tous les champs obligatoires');
+        return;
+      }
+      
+      // Simulate API call
+      elements.submitTicketBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Envoi en cours...';
+      elements.submitTicketBtn.disabled = true;
+      
+      setTimeout(() => {
+        alert('Ticket créé avec succès !');
+        elements.ticketForm.reset();
+        elements.charCount.textContent = '500';
+        elements.submitTicketBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Envoyer le ticket';
+        elements.submitTicketBtn.disabled = false;
+        navigateTo('tickets');
+      }, 1500);
+    }
+
+    // Initialize charts
+    function initCharts() {
+      // Tickets by month chart
+      const ticketsByMonthCtx = document.getElementById('ticketsByMonthChart').getContext('2d');
+      new Chart(ticketsByMonthCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil'],
+          datasets: [{
+            label: 'Tickets créés',
+            data: [12, 19, 15, 23, 18, 25, 22],
+            backgroundColor: '#6c5ce7',
+            borderColor: '#5649c0',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+      
+      // Status distribution chart
+      const statusDistributionCtx = document.getElementById('statusDistributionChart').getContext('2d');
+      new Chart(statusDistributionCtx, {
+        type: 'pie',
+        data: {
+          labels: ['Ouverts', 'En cours', 'Résolus', 'Fermés'],
+          datasets: [{
+            data: [42, 18, 76, 35],
+            backgroundColor: [
+              '#ff4757',
+              '#ffa502',
+              '#2ed573',
+              '#dfe4ea'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'right'
+            }
+          }
+        }
+      });
+      
+      // Resolved by agent chart
+      const resolvedByAgentCtx = document.getElementById('resolvedByAgentChart').getContext('2d');
+      new Chart(resolvedByAgentCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Agent 1', 'Agent 2', 'Agent 3', 'Agent 4', 'Agent 5'],
+          datasets: [{
+            label: 'Tickets résolus',
+            data: [28, 19, 15, 12, 2],
+            backgroundColor: [
+              '#6c5ce7',
+              '#a29bfe',
+              '#fd79a8',
+              '#00cec9',
+              '#55efc4'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // Initialize stats charts
+    function initStatsCharts() {
+      // Tickets by month chart (stats page)
+      const statsTicketsByMonthCtx = document.getElementById('statsTicketsByMonthChart').getContext('2d');
+      new Chart(statsTicketsByMonthCtx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil'],
+          datasets: [{
+            label: 'Tickets créés',
+            data: [12, 19, 15, 23, 18, 25, 22],
+            borderColor: '#6c5ce7',
+            backgroundColor: 'rgba(108, 92, 231, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+      
+      // Status distribution chart (stats page)
+      const statsStatusDistributionCtx = document.getElementById('statsStatusDistributionChart').getContext('2d');
+      new Chart(statsStatusDistributionCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Ouverts', 'En cours', 'Résolus', 'Fermés'],
+          datasets: [{
+            data: [42, 18, 76, 35],
+            backgroundColor: [
+              '#ff4757',
+              '#ffa502',
+              '#2ed573',
+              '#dfe4ea'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'right'
+            }
+          }
+        }
+      });
+      
+      // Resolved by agent chart (stats page)
+      const statsResolvedByAgentCtx = document.getElementById('statsResolvedByAgentChart').getContext('2d');
+      new Chart(statsResolvedByAgentCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Agent 1', 'Agent 2', 'Agent 3', 'Agent 4', 'Agent 5'],
+          datasets: [{
+            label: 'Tickets résolus',
+            data: [28, 19, 15, 12, 2],
+            backgroundColor: [
+              '#6c5ce7',
+              '#a29bfe',
+              '#fd79a8',
+              '#00cec9',
+              '#55efc4'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+      
+      // Resolution time chart
+      const resolutionTimeCtx = document.getElementById('resolutionTimeChart').getContext('2d');
+      new Chart(resolutionTimeCtx, {
+        type: 'radar',
+        data: {
+          labels: ['Matériel', 'Logiciel', 'Réseau', 'Autre'],
+          datasets: [{
+            label: 'Temps moyen (jours)',
+            data: [2.5, 3.2, 4.1, 5.7],
+            backgroundColor: 'rgba(108, 92, 231, 0.2)',
+            borderColor: '#6c5ce7',
+            borderWidth: 2,
+            pointBackgroundColor: '#6c5ce7',
+            pointBorderColor: '#fff',
+            pointHoverRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            r: {
+              angleLines: {
+                display: true
+              },
+              suggestedMin: 0,
+              suggestedMax: 10
+            }
+          }
+        }
+      });
+      
+      // Tickets by category chart
+      const ticketsByCategoryCtx = document.getElementById('ticketsByCategoryChart').getContext('2d');
+      new Chart(ticketsByCategoryCtx, {
+        type: 'polarArea',
+        data: {
+          labels: ['Matériel', 'Logiciel', 'Réseau', 'Autre'],
+          datasets: [{
+            data: [65, 59, 42, 35],
+            backgroundColor: [
+              '#ff7675',
+              '#74b9ff',
+              '#55efc4',
+              '#a29bfe'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'right'
+            }
+          }
+        }
+      });
+    }
+
+    // Helper functions
+    function getStatusText(status) {
+      const statusMap = {
+        'open': 'Ouvert',
+        'in-progress': 'En cours',
+        'resolved': 'Résolu',
+        'closed': 'Fermé'
+      };
+      return statusMap[status] || status;
+    }
+
+    function getPriorityText(priority) {
+      const priorityMap = {
+        'high': 'Haute',
+        'medium': 'Moyenne',
+        'low': 'Basse'
+      };
+      return priorityMap[priority] || priority;
+    }
+
+    function getPriorityClass(priority) {
+      const classMap = {
+        'high': 'danger',
+        'medium': 'warning',
+        'low': 'info'
+      };
+      return classMap[priority] || 'secondary';
+    }
+
+    function getRoleBadgeClass(role) {
+      const classMap = {
+        'admin': 'danger',
+        'agent': 'warning',
+        'employee': 'info'
+      };
+      return classMap[role] || 'secondary';
+    }
+
+    // Mock data generators
+    function generateMockTickets(count) {
+      const statuses = ['open', 'in-progress', 'resolved', 'closed'];
+      const priorities = ['high', 'medium', 'low'];
+      const categories = ['hardware', 'software', 'network', 'other'];
+      const titles = [
+        'Problème de connexion VPN',
+        'Demande de nouveau matériel',
+        'Problème d\'imprimante',
+        'Accès au serveur',
+        'Licence logiciel expirée',
+        'Clavier ne fonctionne pas',
+        'Écran noir au démarrage',
+        'Problème de réseau',
+        'Demande de formation',
+        'Mot de passe oublié'
+      ];
+      
+      const tickets = [];
+      const currentDate = new Date();
+      
+      for (let i = 1; i <= count; i++) {
+        const randomDays = Math.floor(Math.random() * 30);
+        const ticketDate = new Date();
+        ticketDate.setDate(currentDate.getDate() - randomDays);
+        
+        tickets.push({
+          id: `TICKET-${1000 + i}`,
+          title: titles[Math.floor(Math.random() * titles.length)],
+          status: statuses[Math.floor(Math.random() * statuses.length)],
+          priority: priorities[Math.floor(Math.random() * priorities.length)],
+          category: categories[Math.floor(Math.random() * categories.length)],
+          createdAt: ticketDate.toLocaleDateString('fr-FR'),
+          assignedTo: `User ${Math.floor(Math.random() * 5) + 1}`
+        });
+      }
+      
+      return tickets;
+    }
+
+    function generateMockUsers(count) {
+      const roles = ['admin', 'agent', 'employee'];
+      const statuses = ['active', 'inactive'];
+      const firstNames = ['Jean', 'Marie', 'Pierre', 'Sophie', 'Thomas', 'Laura', 'Nicolas', 'Emma'];
+      const lastNames = ['Dupont', 'Martin', 'Bernard', 'Petit', 'Durand', 'Leroy', 'Moreau', 'Simon'];
+      
+      const users = [];
+      const currentDate = new Date();
+      
+      for (let i = 1; i <= count; i++) {
+        const randomDays = Math.floor(Math.random() * 60);
+        const lastLogin = new Date();
+        lastLogin.setDate(currentDate.getDate() - randomDays);
+        
+        const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+        const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+        
+        users.push({
+          id: `USER-${100 + i}`,
+          name: `${firstName} ${lastName}`,
+          email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+          role: roles[Math.floor(Math.random() * roles.length)],
+          status: statuses[Math.floor(Math.random() * statuses.length)],
+          lastLogin: randomDays < 30 ? lastLogin.toLocaleDateString('fr-FR') : null
+        });
+      }
+      
+      return users;
+    }
+  </script>
+</body>
+</html>
