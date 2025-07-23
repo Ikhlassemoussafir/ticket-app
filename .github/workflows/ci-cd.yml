@@ -2,7 +2,7 @@ name: CI/CD TicketApp
 
 on:
   push:
-    branches: [ "main" ]  # ou "master" si c’est ton branche principale
+    branches: [ "main" ]
 
 jobs:
   build-and-deploy:
@@ -18,8 +18,8 @@ jobs:
     - name: 🔧 Build backend Docker image
       run: docker build -t ticketapp-backend ./backend
 
-    - name: 🔧 Build frontend Docker image (si tu en as un)
+    - name: 🔧 Build frontend Docker image
       run: docker build -t ticketapp-frontend ./frontend
 
-    - name: ⚙️ Docker Compose Up (en local ou SSH si distant)
+    - name: ⚙️ Docker Compose Up
       run: docker-compose up -d
