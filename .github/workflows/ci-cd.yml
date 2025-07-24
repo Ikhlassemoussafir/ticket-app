@@ -2,23 +2,24 @@ name: CI/CD TicketApp
 
 on:
   push:
-    branches: [ "master" ] 
+    branches: [ "master" ]  # ou "master" si ton branche principale s'appelle "master"
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🔄 Cloner le repo
-        uses: actions/checkout@v3
+    - name: 🔄 Cloner le repo
+      uses: actions/checkout@v3
 
-      - name: 🐳 Setup Docker
-        uses: docker/setup-buildx-action@v3
+    - name: 🐳 Setup Docker
+      uses: docker/setup-buildx-action@v3
 
-      - name: 🔧 Build backend Docker image
-        run: docker build -t ticketapp-backend -f docker/Dockerfile.backend ./backend
+    - name: 🔧 Build backend Docker image
+      run: docker build -t ticketapp-backend -f docker/Dockerfile.backend .
 
-      - name: 🔧 Build frontend Docker image
-        run: docker build -t ticketapp-frontend -f docker/Dockerfile.frontend ./frontend
+    - name: 🔧 Build frontend Docker image
+      run: docker build -t ticketapp-frontend -f docker/Dockerfile.frontend .
 
-      - name: ⚙️ Lancer l’application via Docker Compose
-        run: docker-compose -f docker-compose.yml up -d
+    - name: ⚙️ Lancer l’application avec Docker Compose
+      run: docker-compose up -d
