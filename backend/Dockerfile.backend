@@ -1,8 +1,8 @@
 FROM python:3.10-slim
 
-# Prérequis système pour ODBC (SQL Server)
+# Prérequis système
 RUN apt-get update && \
-    apt-get install -y curl gnupg2 apt-transport-https ca-certificates && \
+    apt-get install -y curl gnupg2 apt-transport-https ca-certificates software-properties-common && \
     curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg && \
     curl -sSL https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
     apt-get update && \
@@ -11,11 +11,11 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# ✅ Installe les dépendances
+# 💡 On suppose que tu build depuis ticket-app/
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ✅ Copie tout le backend (y compris routes/, utils/, etc.)
+# ⬇️ Copie tous les fichiers du backend dans /app
 COPY backend/ .
 
 CMD ["python", "app.py"]
