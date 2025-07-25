@@ -25,4 +25,5 @@ jobs:
       run: docker build -t ticketapp-frontend -f docker/Dockerfile.frontend .
 
     - name: ⚙️ Lancer l’application avec Docker Compose
-      run: docker-compose up -d
+      run: docker compose up -d
+
